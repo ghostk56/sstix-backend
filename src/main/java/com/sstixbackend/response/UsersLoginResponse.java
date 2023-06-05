@@ -1,6 +1,7 @@
 package com.sstixbackend.response;
 
 public record UsersLoginResponse(
-		String token
+		String token,
+		Integer level
 ) {
 }

@@ -17,6 +17,7 @@ import com.sstixbackend.request.UsersRegisterRequest;
 import com.sstixbackend.request.UsersUpdateRequest;
 import com.sstixbackend.response.RestfulResponse;
 import com.sstixbackend.response.UsersInfoResponse;
+import com.sstixbackend.response.UsersLoginResponse;
 import com.sstixbackend.util.JWTUtil;
 import com.sstixbackend.util.SHAUtil;
 
@@ -32,14 +33,14 @@ public class UsersService {
 	@Autowired
 	private SHAUtil sha;
 
-	private Optional<Users> findById;
-
 	public ResponseEntity<RestfulResponse<?>> login(UsersLoginRequest user) {
 		if (verification(user)) {
 			String userName = user.userName();
 			Users ou = us.findByUserName(userName);
 			String token = jwt.generateToken(ou);
-			RestfulResponse<String> response = new RestfulResponse<String>("00000", "登入成功", token);
+			UsersLoginResponse loginResponse = new UsersLoginResponse(token, ou.getLevel());
+			RestfulResponse<UsersLoginResponse> response = new RestfulResponse<UsersLoginResponse>("00000", "登入成功",
+					loginResponse);
 			return ResponseEntity.status(HttpStatus.OK).body(response);
 		}
 		RestfulResponse<String> response = new RestfulResponse<String>("00001", "登入失敗", null);
@@ -60,16 +61,25 @@ public class UsersService {
 
 	public ResponseEntity<RestfulResponse<?>> validateToken(String auth) {
 		String token = auth.substring(6);
+		Integer id;
 		try {
-			jwt.validateToken(token);
+			id = jwt.validateToken(token);
 		} catch (AuthException e) {
 			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
-		RestfulResponse<String> response = new RestfulResponse<String>("00000", "驗證成功", null);
-		return ResponseEntity.status(HttpStatus.OK).body(response);
+		Optional<Users> optional = us.findById(id);
+		if (optional.isPresent()) {
+			Users user = optional.get();
+			UsersLoginResponse loginResponse = new UsersLoginResponse(token, user.getLevel());
+			RestfulResponse<UsersLoginResponse> response = new RestfulResponse<UsersLoginResponse>("00000", "驗證成功",
+					loginResponse);
+			return ResponseEntity.status(HttpStatus.OK).body(response);
+		}
+		RestfulResponse<String> response = new RestfulResponse<String>("00004", "驗證失敗", null);
+		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 	}
-	
+
 	public ResponseEntity<RestfulResponse<?>> userInfo(String auth) {
 		String token = auth.substring(6);
 		Integer id;
@@ -80,18 +90,20 @@ public class UsersService {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
 		Optional<Users> optional = us.findById(id);
-		if (optional.isPresent()) { 
+		if (optional.isPresent()) {
 			Users user = optional.get();
-			UsersInfoResponse infoResponse = new UsersInfoResponse(user.getUserName(), user.getEmail(), user.getPhone());
-			RestfulResponse<UsersInfoResponse> response = new RestfulResponse<UsersInfoResponse>("00000", "成功", infoResponse);
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+			UsersInfoResponse infoResponse = new UsersInfoResponse(user.getUserName(), user.getEmail(),
+					user.getPhone());
+			RestfulResponse<UsersInfoResponse> response = new RestfulResponse<UsersInfoResponse>("00000", "成功",
+					infoResponse);
+			return ResponseEntity.status(HttpStatus.OK).body(response);
 		}
 		RestfulResponse<String> response = new RestfulResponse<String>("00006", "資料錯誤", null);
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 	}
 
 	public ResponseEntity<RestfulResponse<?>> addUser(UsersRegisterRequest rq) {
-		if (rq != null && rq.userName()!= null) {
+		if (rq != null && rq.userName() != null) {
 			Users original = us.findByUserName(rq.userName());
 			if (original != null) {
 				RestfulResponse<String> response = new RestfulResponse<String>("00003", "帳號已存在", null);
@@ -102,7 +114,9 @@ public class UsersService {
 					.level(1).status(1).build();
 			us.save(user);
 			String token = jwt.generateToken(user);
-			RestfulResponse<String> response = new RestfulResponse<String>("00000", "註冊成功", token);
+			UsersLoginResponse loginResponse = new UsersLoginResponse(token, user.getLevel());
+			RestfulResponse<UsersLoginResponse> response = new RestfulResponse<UsersLoginResponse>("00000", "註冊成功",
+					loginResponse);
 			return ResponseEntity.status(HttpStatus.OK).body(response);
 		}
 		RestfulResponse<String> response = new RestfulResponse<String>("00002", "註冊失敗", null);
@@ -118,7 +132,6 @@ public class UsersService {
 			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
-
 		if (user != null && id != null) {
 			Optional<Users> optional = us.findById(id);
 			if (optional.isPresent()) {
@@ -126,7 +139,7 @@ public class UsersService {
 				if (sha.getResult(user.oldPassword()).equals(original.getPassword())) {
 					String sp = sha.getResult(user.password());
 					original.setPassword(sp);
-					RestfulResponse<String> response = new RestfulResponse<String>("00000", "修改成功", token);
+					RestfulResponse<String> response = new RestfulResponse<String>("00000", "修改成功", null);
 					return ResponseEntity.status(HttpStatus.OK).body(response);
 				}
 			}
