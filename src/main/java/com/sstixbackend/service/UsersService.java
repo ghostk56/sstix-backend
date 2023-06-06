@@ -25,7 +25,7 @@ import com.sstixbackend.util.SHAUtil;
 @Transactional
 public class UsersService {
 	@Autowired
-	private UsersRepository us;
+	private UsersRepository ur;
 
 	@Autowired
 	private JWTUtil jwt;
@@ -36,7 +36,7 @@ public class UsersService {
 	public ResponseEntity<RestfulResponse<?>> login(UsersLoginRequest user) {
 		if (verification(user)) {
 			String userName = user.userName();
-			Users ou = us.findByUserName(userName);
+			Users ou = ur.findByUserName(userName);
 			String token = jwt.generateToken(ou);
 			UsersLoginResponse loginResponse = new UsersLoginResponse(token, ou.getLevel());
 			RestfulResponse<UsersLoginResponse> response = new RestfulResponse<UsersLoginResponse>("00000", "登入成功",
@@ -50,7 +50,7 @@ public class UsersService {
 	public boolean verification(UsersLoginRequest user) {
 		if (user != null && user.userName() != null) {
 			String userName = user.userName();
-			Users original = us.findByUserName(userName);
+			Users original = ur.findByUserName(userName);
 			if (original != null) {
 				String sp = sha.getResult(user.password());
 				return original.getPassword().equals(sp);
@@ -68,7 +68,7 @@ public class UsersService {
 			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
-		Optional<Users> optional = us.findById(id);
+		Optional<Users> optional = ur.findById(id);
 		if (optional.isPresent()) {
 			Users user = optional.get();
 			UsersLoginResponse loginResponse = new UsersLoginResponse(token, user.getLevel());
@@ -89,7 +89,7 @@ public class UsersService {
 			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
-		Optional<Users> optional = us.findById(id);
+		Optional<Users> optional = ur.findById(id);
 		if (optional.isPresent()) {
 			Users user = optional.get();
 			UsersInfoResponse infoResponse = new UsersInfoResponse(user.getUserName(), user.getEmail(),
@@ -104,7 +104,7 @@ public class UsersService {
 
 	public ResponseEntity<RestfulResponse<?>> addUser(UsersRegisterRequest rq) {
 		if (rq != null && rq.userName() != null) {
-			Users original = us.findByUserName(rq.userName());
+			Users original = ur.findByUserName(rq.userName());
 			if (original != null) {
 				RestfulResponse<String> response = new RestfulResponse<String>("00003", "帳號已存在", null);
 				return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
@@ -112,7 +112,7 @@ public class UsersService {
 			String password = sha.getResult(rq.password());
 			Users user = Users.builder().userName(rq.userName()).email(rq.email()).phone(rq.phone()).password(password)
 					.level(1).status(1).build();
-			us.save(user);
+			ur.save(user);
 			String token = jwt.generateToken(user);
 			UsersLoginResponse loginResponse = new UsersLoginResponse(token, user.getLevel());
 			RestfulResponse<UsersLoginResponse> response = new RestfulResponse<UsersLoginResponse>("00000", "註冊成功",
@@ -133,7 +133,7 @@ public class UsersService {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
 		if (user != null && id != null) {
-			Optional<Users> optional = us.findById(id);
+			Optional<Users> optional = ur.findById(id);
 			if (optional.isPresent()) {
 				Users original = optional.get();
 				if (sha.getResult(user.oldPassword()).equals(original.getPassword())) {
