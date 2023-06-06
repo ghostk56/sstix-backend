@@ -121,7 +121,8 @@ public class EventsService {
 				event.setPrice(request.price());
 				event.setQty(request.qty());
 				event.setEventDate(request.eventDate());
-				event.setImage1(request.image1());
+				if (request.image1() != null && !request.image1().equals(""))
+					event.setImage1(request.image1());
 				RestfulResponse<String> response = new RestfulResponse<String>("00000", "修改成功", null);
 				return ResponseEntity.status(HttpStatus.OK).body(response);
 			}
