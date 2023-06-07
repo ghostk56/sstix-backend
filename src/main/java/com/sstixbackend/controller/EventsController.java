@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.sstixbackend.request.EventsSaveRequest;
@@ -26,14 +27,15 @@ public class EventsController {
 	private EventsService es;
 
 	@GetMapping
-	public ResponseEntity<RestfulResponse<?>> selectAllEvent(@RequestHeader("Authorization") String auth) {
-		return es.selectAllEvents(auth);
+	public ResponseEntity<RestfulResponse<?>> selectAllEvent(
+			@RequestParam(required = false) String name, @RequestParam(required = false) Integer status) {
+		return es.selectAllEvents(name, status);
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<RestfulResponse<?>> selectEvent(@RequestHeader("Authorization") String auth,
+	public ResponseEntity<RestfulResponse<?>> selectEvent(
 			@PathVariable Integer id) {
-		return es.selectEvents(id, auth);
+		return es.selectEvents(id);
 	}
 
 	@PostMapping

@@ -8,6 +8,7 @@ import javax.security.auth.message.AuthException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -30,16 +31,19 @@ public class EventsService {
 	@Autowired
 	private JWTUtil jwt;
 
-	public ResponseEntity<RestfulResponse<?>> selectAllEvents(String auth) {
-		String token = auth.substring(6);
-		try {
-			jwt.validateToken(token);
-		} catch (AuthException e) {
-			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+	public ResponseEntity<RestfulResponse<?>> selectAllEvents(String name, Integer status) {
+		Specification<Events> spec = Specification.where(null);
+		if (name != null) {
+			spec = spec.and((root, query, cb) -> cb.like(root.get("name"), "%" + name + "%"));
 		}
+
+		if (status != null && status != 0) {
+			spec = spec.and((root, query, cb) -> cb.notEqual(root.get("status"), 0));
+		}
+
 		Sort sort = Sort.by(Sort.Direction.DESC, "id");
-		List<Events> events = er.findAll(sort);
+		List<Events> events = er.findAll(spec, sort);
+		
 		if (events != null) {
 			List<EventsSelectResponse> responseList = events.stream().map(event -> {
 				EventsSelectResponse response = new EventsSelectResponse(event.getId(), event.getName(),
@@ -56,14 +60,7 @@ public class EventsService {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 	}
 
-	public ResponseEntity<RestfulResponse<?>> selectEvents(Integer id, String auth) {
-		String token = auth.substring(6);
-		try {
-			jwt.validateToken(token);
-		} catch (AuthException e) {
-			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
-		}
+	public ResponseEntity<RestfulResponse<?>> selectEvents(Integer id) {
 		if (id != null) {
 			Optional<Events> optional = er.findById(id);
 			if (optional.isPresent()) {
