@@ -41,7 +41,7 @@ public class OrdersController {
 	}
 
 	@PutMapping
-	public ResponseEntity<RestfulResponse<?>> updateEvent(@RequestHeader("Authorization") String auth,
+	public ResponseEntity<RestfulResponse<?>> updateOrder(@RequestHeader("Authorization") String auth,
 			@RequestBody OrderUpdateRequest rq) {
 		return os.updateOrder(rq, auth);
 	}

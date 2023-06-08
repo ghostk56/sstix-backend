@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import javax.security.auth.message.AuthException;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -43,7 +44,9 @@ public class OrdersService {
 			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
-		List<Orders> orders = or.findAll();
+
+		Sort sort = Sort.by(Sort.Direction.DESC, "id");
+		List<Orders> orders = or.findAll(sort);
 		if (orders != null) {
 			List<OrdersSelectResponse> responseList = orders.stream().map(order -> {
 				Events event = order.getEvents();
@@ -75,7 +78,8 @@ public class OrdersService {
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
 		if (userId != null) {
-			List<Orders> orders = or.findByUsersId(userId);
+			Sort sort = Sort.by(Sort.Direction.DESC, "id");
+			List<Orders> orders = or.findByUsersId(userId, sort);
 			if (orders != null) {
 				List<OrdersSelectResponse> responseList = orders.stream().map(order -> {
 					Events event = order.getEvents();
@@ -117,12 +121,15 @@ public class OrdersService {
 					RestfulResponse<String> response = new RestfulResponse<String>("00022", "未開賣", null);
 					return ResponseEntity.status(HttpStatus.OK).body(response);
 				}
-				if (req.quantity() > event.getQty()) {
+				Integer quantity = req.quantity();
+				Integer qty = event.getQty();
+				if (quantity > qty) {
 					RestfulResponse<String> response = new RestfulResponse<String>("00021", "剩餘票數不足", null);
 					return ResponseEntity.status(HttpStatus.OK).body(response);
 				}
+				event.setQty(qty - quantity);
 				Orders order = Orders.builder().usersId(userId).events(event).quantity(req.quantity())
-						.eventPrice(event.getPrice()).Status(1).build();
+						.eventPrice(event.getPrice() * quantity).Status(1).build();
 				or.save(order);
 				RestfulResponse<String> response = new RestfulResponse<String>("00000", "訂購成功", null);
 				return ResponseEntity.status(HttpStatus.OK).body(response);
