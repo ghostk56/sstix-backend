@@ -16,8 +16,8 @@ import com.sstixbackend.model.Events;
 import com.sstixbackend.model.Orders;
 import com.sstixbackend.repository.EventsRepository;
 import com.sstixbackend.repository.OrdersRepository;
-import com.sstixbackend.request.EventsUpdateRequest;
 import com.sstixbackend.request.OrderSaveRequest;
+import com.sstixbackend.request.OrderUpdateRequest;
 import com.sstixbackend.response.EventsSelectResponse;
 import com.sstixbackend.response.OrdersSelectResponse;
 import com.sstixbackend.response.RestfulResponse;
@@ -65,21 +65,38 @@ public class OrdersService {
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 	}
 
-	public ResponseEntity<RestfulResponse<?>> selectEvents(Integer id) {
-		if (id != null) {
-			Optional<Events> optional = er.findById(id);
-			if (optional.isPresent()) {
-				Events event = optional.get();
-				EventsSelectResponse selectResponse = new EventsSelectResponse(event.getId(), event.getName(),
-						event.getDetails(), event.getLocation(), event.getOrganizer(), event.getEventDate(),
-						event.getStatus(), event.getPrice(), event.getQty(), event.getImage1());
+	public ResponseEntity<RestfulResponse<?>> selectUserOrders(String auth) {
+		String token = auth.substring(6);
+		Integer userId;
+		try {
+			userId = jwt.validateToken(token);
+		} catch (AuthException e) {
+			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+		}
+		if (userId != null) {
+			List<Orders> orders = or.findByUsersId(userId);
+			if (orders != null) {
+				List<OrdersSelectResponse> responseList = orders.stream().map(order -> {
+					Events event = order.getEvents();
+					EventsSelectResponse selectResponse = new EventsSelectResponse(event.getId(), event.getName(),
+							event.getDetails(), event.getLocation(), event.getOrganizer(), event.getEventDate(),
+							event.getStatus(), event.getPrice(), event.getQty(), event.getImage1());
 
-				RestfulResponse<EventsSelectResponse> response = new RestfulResponse<EventsSelectResponse>("00000",
-						"成功", selectResponse);
+					OrdersSelectResponse response = new OrdersSelectResponse(order.getId(), order.getUsersId(),
+							selectResponse, order.getQuantity(), order.getEventPrice(), order.getOrderDate(),
+							order.getStatus());
+					return response;
+				}).collect(Collectors.toList());
+
+				RestfulResponse<List<OrdersSelectResponse>> response = new RestfulResponse<List<OrdersSelectResponse>>(
+						"00000", "成功", responseList);
 				return ResponseEntity.status(HttpStatus.OK).body(response);
 			}
+			RestfulResponse<String> response = new RestfulResponse<String>("00024", "查無資料", null);
+			return ResponseEntity.status(HttpStatus.OK).body(response);
 		}
-		RestfulResponse<String> response = new RestfulResponse<String>("00016", "資料錯誤", null);
+		RestfulResponse<String> response = new RestfulResponse<String>("00026", "資料錯誤", null);
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 	}
 
@@ -96,6 +113,10 @@ public class OrdersService {
 			Optional<Events> optional = er.findById(req.eventsId());
 			if (optional.isPresent()) {
 				Events event = optional.get();
+				if (event.getStatus() != 1) {
+					RestfulResponse<String> response = new RestfulResponse<String>("00022", "未開賣", null);
+					return ResponseEntity.status(HttpStatus.OK).body(response);
+				}
 				if (req.quantity() > event.getQty()) {
 					RestfulResponse<String> response = new RestfulResponse<String>("00021", "剩餘票數不足", null);
 					return ResponseEntity.status(HttpStatus.OK).body(response);
@@ -107,11 +128,11 @@ public class OrdersService {
 				return ResponseEntity.status(HttpStatus.OK).body(response);
 			}
 		}
-		RestfulResponse<String> response = new RestfulResponse<String>("00022", "訂購失敗", null);
+		RestfulResponse<String> response = new RestfulResponse<String>("00023", "訂購失敗", null);
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 	}
 
-	public ResponseEntity<RestfulResponse<?>> updateEvents(EventsUpdateRequest request, String auth) {
+	public ResponseEntity<RestfulResponse<?>> updateOrder(OrderUpdateRequest rq, String auth) {
 		String token = auth.substring(6);
 		try {
 			jwt.validateToken(token);
@@ -119,25 +140,16 @@ public class OrdersService {
 			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
-		if (request != null && request.id() != null) {
-			Optional<Events> optional = er.findById(request.id());
+		if (rq != null && rq.orderId() != null) {
+			Optional<Orders> optional = or.findById(rq.orderId());
 			if (optional.isPresent()) {
-				Events event = optional.get();
-				event.setName(request.name());
-				event.setDetails(request.details());
-				event.setLocation(request.location());
-				event.setOrganizer(request.organizer());
-				event.setStatus(request.status());
-				event.setPrice(request.price());
-				event.setQty(request.qty());
-				event.setEventDate(request.eventDate());
-				if (request.image1() != null && !request.image1().equals(""))
-					event.setImage1(request.image1());
+				Orders order = optional.get();
+				order.setStatus(rq.status());
 				RestfulResponse<String> response = new RestfulResponse<String>("00000", "修改成功", null);
 				return ResponseEntity.status(HttpStatus.OK).body(response);
 			}
 		}
-		RestfulResponse<String> response = new RestfulResponse<String>("00015", "修改失敗", null);
+		RestfulResponse<String> response = new RestfulResponse<String>("00025", "修改失敗", null);
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 	}
 }
