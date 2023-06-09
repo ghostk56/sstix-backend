@@ -33,8 +33,28 @@ public class ImageController {
 
 		byte[] imageData = imageService.getImage(imageName);
 
+		String fileExtension = imageName.substring(imageName.lastIndexOf(".") + 1);
+
+		MediaType mediaType;
+
+		switch (fileExtension.toLowerCase()) {
+		case "jpeg":
+		case "jpg":
+			mediaType = MediaType.IMAGE_JPEG;
+			break;
+		case "png":
+			mediaType = MediaType.IMAGE_PNG;
+			break;
+		case "gif":
+			mediaType = MediaType.IMAGE_GIF;
+			break;
+		default:
+			mediaType = MediaType.APPLICATION_OCTET_STREAM;
+			break;
+		}
+		
 		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.IMAGE_JPEG);
+		headers.setContentType(mediaType);
 
 		return new ResponseEntity<byte[]>(imageData, headers, HttpStatus.OK);
 	}

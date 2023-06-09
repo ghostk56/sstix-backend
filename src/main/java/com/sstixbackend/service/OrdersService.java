@@ -129,7 +129,7 @@ public class OrdersService {
 				}
 				event.setQty(qty - quantity);
 				Orders order = Orders.builder().usersId(userId).events(event).quantity(req.quantity())
-						.eventPrice(event.getPrice() * quantity).Status(1).build();
+						.eventPrice(event.getPrice()).Status(1).build();
 				or.save(order);
 				RestfulResponse<String> response = new RestfulResponse<String>("00000", "訂購成功", null);
 				return ResponseEntity.status(HttpStatus.OK).body(response);

@@ -23,8 +23,11 @@ public class ImageService {
 		File imageFile = new File(imageDirectory + imageName);
 		BufferedImage image = ImageIO.read(imageFile);
 
+		String fileExtension = imageName.substring(imageName.lastIndexOf(".") + 1);
+		String formatName = getFormatNameForImageExtension(fileExtension);
+
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ImageIO.write(image, "jpeg", baos);
+		ImageIO.write(image, formatName, baos);
 		imageBytes = baos.toByteArray();
 
 		return imageBytes;
@@ -43,5 +46,19 @@ public class ImageService {
 		image.transferTo(new File(dir, imageName));
 
 		return imageName;
+	}
+
+	private String getFormatNameForImageExtension(String fileExtension) {
+		switch (fileExtension.toLowerCase()) {
+		case "jpeg":
+		case "jpg":
+			return "jpeg";
+		case "png":
+			return "png";
+		case "gif":
+			return "gif";
+		default:
+			return "jpeg"; // 或者根據需求返回預設格式
+		}
 	}
 }
