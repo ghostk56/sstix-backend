@@ -31,10 +31,15 @@ public class EventsService {
 	@Autowired
 	private JWTUtil jwt;
 
-	public ResponseEntity<RestfulResponse<?>> selectAllEvents(String name, Integer status) {
+	public ResponseEntity<RestfulResponse<?>> selectAllEvents(String keyword, Integer status) {
 		Specification<Events> spec = Specification.where(null);
-		if (name != null) {
-			spec = spec.and((root, query, cb) -> cb.like(root.get("name"), "%" + name + "%"));
+		if (keyword != null) {
+		    spec = spec.and((root, query, cb) ->
+		        cb.or(
+		            cb.like(root.get("name"), "%" + keyword + "%"),
+		            cb.like(root.get("details"), "%" + keyword + "%")
+		        )
+		    );
 		}
 
 		if (status != null && status != 0) {

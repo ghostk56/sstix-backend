@@ -10,11 +10,14 @@ public class SHAUtil {
 	/**
 	 * SHA-256
 	 */
-	public static final String KEY_SHA = "SHA-256";
+	public static final String KEY_SHA = "SHA-512";
+	
+	private static final String SECRET = "sstix sunny";
 
 	public String getResult(String inputStr) {
 		BigInteger sha = null;
-		byte[] inputData = inputStr.getBytes();
+		String str = inputStr + SECRET;
+		byte[] inputData = str.getBytes();
 		try {
 			MessageDigest messageDigest = MessageDigest.getInstance(KEY_SHA);
 			messageDigest.update(inputData);
