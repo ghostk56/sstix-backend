@@ -144,7 +144,7 @@ public class UsersService {
 				}
 			}
 		}
-		RestfulResponse<String> response = new RestfulResponse<String>("00005", "修改失敗", null);
+		RestfulResponse<String> response = new RestfulResponse<String>("00007", "修改失敗", null);
 		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 	}
 }

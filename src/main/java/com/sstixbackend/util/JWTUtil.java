@@ -22,7 +22,7 @@ import io.jsonwebtoken.UnsupportedJwtException;
 
 @Service
 public class JWTUtil {
-	private static final long EXPIRATION_TIME = 60 * 60 * 1000;
+	private static final long EXPIRATION_TIME = 12 * 60 * 60 * 1000;
 	/**
 	 * JWT SECRET KEY
 	 */

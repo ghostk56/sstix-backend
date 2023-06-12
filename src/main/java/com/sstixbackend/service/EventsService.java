@@ -15,7 +15,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.sstixbackend.model.Events;
+import com.sstixbackend.model.Users;
 import com.sstixbackend.repository.EventsRepository;
+import com.sstixbackend.repository.UsersRepository;
 import com.sstixbackend.request.EventsSaveRequest;
 import com.sstixbackend.request.EventsUpdateRequest;
 import com.sstixbackend.response.EventsSelectResponse;
@@ -25,8 +27,12 @@ import com.sstixbackend.util.JWTUtil;
 @Service
 @Transactional
 public class EventsService {
+
 	@Autowired
 	private EventsRepository er;
+
+	@Autowired
+	private UsersRepository ur;
 
 	@Autowired
 	private JWTUtil jwt;
@@ -34,12 +40,8 @@ public class EventsService {
 	public ResponseEntity<RestfulResponse<?>> selectAllEvents(String keyword, Integer status) {
 		Specification<Events> spec = Specification.where(null);
 		if (keyword != null) {
-		    spec = spec.and((root, query, cb) ->
-		        cb.or(
-		            cb.like(root.get("name"), "%" + keyword + "%"),
-		            cb.like(root.get("details"), "%" + keyword + "%")
-		        )
-		    );
+			spec = spec.and((root, query, cb) -> cb.or(cb.like(root.get("name"), "%" + keyword + "%"),
+					cb.like(root.get("details"), "%" + keyword + "%")));
 		}
 
 		if (status != null && status != 0) {
@@ -48,7 +50,7 @@ public class EventsService {
 
 		Sort sort = Sort.by(Sort.Direction.DESC, "id");
 		List<Events> events = er.findAll(spec, sort);
-		
+
 		if (events != null) {
 			List<EventsSelectResponse> responseList = events.stream().map(event -> {
 				EventsSelectResponse response = new EventsSelectResponse(event.getId(), event.getName(),
@@ -85,12 +87,23 @@ public class EventsService {
 
 	public ResponseEntity<RestfulResponse<?>> saveEvents(EventsSaveRequest request, String auth) {
 		String token = auth.substring(6);
+		Integer id;
 		try {
-			jwt.validateToken(token);
+			id = jwt.validateToken(token);
 		} catch (AuthException e) {
 			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
+
+		Optional<Users> optional = ur.findById(id);
+		if (optional.isPresent()) {
+			Users user = optional.get();
+			if (user.getLevel() != 2) {
+				RestfulResponse<String> response = new RestfulResponse<String>("00005", "沒有管理員權限", null);
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+			}
+		}
+
 		if (request != null) {
 			Events event = Events.builder().name(request.name()).details(request.details()).location(request.location())
 					.organizer(request.organizer()).status(request.status()).price(request.price()).qty(request.qty())
@@ -105,16 +118,27 @@ public class EventsService {
 
 	public ResponseEntity<RestfulResponse<?>> updateEvents(EventsUpdateRequest request, String auth) {
 		String token = auth.substring(6);
+		Integer id;
 		try {
-			jwt.validateToken(token);
+			id = jwt.validateToken(token);
 		} catch (AuthException e) {
 			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
 		}
+
+		Optional<Users> optional = ur.findById(id);
+		if (optional.isPresent()) {
+			Users user = optional.get();
+			if (user.getLevel() != 2) {
+				RestfulResponse<String> response = new RestfulResponse<String>("00005", "沒有管理員權限", null);
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+			}
+		}
+
 		if (request != null && request.id() != null) {
-			Optional<Events> optional = er.findById(request.id());
-			if (optional.isPresent()) {
-				Events event = optional.get();
+			Optional<Events> original = er.findById(request.id());
+			if (original.isPresent()) {
+				Events event = original.get();
 				event.setName(request.name());
 				event.setDetails(request.details());
 				event.setLocation(request.location());

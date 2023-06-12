@@ -15,8 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.sstixbackend.model.Events;
 import com.sstixbackend.model.Orders;
+import com.sstixbackend.model.Users;
 import com.sstixbackend.repository.EventsRepository;
 import com.sstixbackend.repository.OrdersRepository;
+import com.sstixbackend.repository.UsersRepository;
 import com.sstixbackend.request.OrderSaveRequest;
 import com.sstixbackend.request.OrderUpdateRequest;
 import com.sstixbackend.response.EventsSelectResponse;
@@ -34,15 +36,27 @@ public class OrdersService {
 	private OrdersRepository or;
 
 	@Autowired
+	private UsersRepository ur;
+
+	@Autowired
 	private JWTUtil jwt;
 
 	public ResponseEntity<RestfulResponse<?>> selectAllorders(String auth) {
 		String token = auth.substring(6);
+		Integer id;
 		try {
-			jwt.validateToken(token);
+			id = jwt.validateToken(token);
 		} catch (AuthException e) {
 			RestfulResponse<String> response = new RestfulResponse<String>("00004", e.getMessage(), null);
 			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+		}
+		Optional<Users> optional = ur.findById(id);
+		if (optional.isPresent()) {
+			Users user = optional.get();
+			if (user.getLevel() != 2) {
+				RestfulResponse<String> response = new RestfulResponse<String>("00005", "沒有管理員權限", null);
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+			}
 		}
 
 		Sort sort = Sort.by(Sort.Direction.DESC, "id");
