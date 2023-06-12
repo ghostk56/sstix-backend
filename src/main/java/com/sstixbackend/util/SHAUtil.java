@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class SHAUtil {
 	/**
-	 * SHA-256
+	 * SHA-512
 	 */
 	public static final String KEY_SHA = "SHA-512";
 	
