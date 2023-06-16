@@ -8,16 +8,17 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.sstixbackend.aop.BaseController;
+import com.sstixbackend.aop.BaseException;
 
 @CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/test")
-public class TestAopController extends BaseController {
+public class TestAopController extends BaseException {
 
 	@PostMapping
 	public ResponseEntity<String> test(@RequestHeader("Authorization") String auth) {
-		if (auth.length() > 6) {
+		System.out.println("testController");
+		if (auth.length() > 10) {
 			throw new RuntimeException("test拋出錯誤");
 		}
 		return ResponseEntity.status(HttpStatus.OK).body("成功");
@@ -25,12 +26,14 @@ public class TestAopController extends BaseController {
 
 //	@ExceptionHandler(RuntimeException.class)
 //	public ResponseEntity<String> handleRuntimeException(Exception error) {
-//		return ResponseEntity.status(HttpStatus.FORBIDDEN).body("RuntimeException");
+//		System.out.println("handleRuntimeExceptionTest");
+//		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error.getMessage());
 //	}
-//
+//	
 //	@ExceptionHandler(Exception.class)
 //	public ResponseEntity<String> handleException(Exception error) {
-//		return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Exception");
+//		System.out.println("handleExceptionTest");
+//		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error.getMessage());
 //	}
 
 }
