@@ -24,16 +24,4 @@ public class TestAopController extends BaseException {
 		return ResponseEntity.status(HttpStatus.OK).body("成功");
 	}
 
-//	@ExceptionHandler(RuntimeException.class)
-//	public ResponseEntity<String> handleRuntimeException(Exception error) {
-//		System.out.println("handleRuntimeExceptionTest");
-//		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error.getMessage());
-//	}
-//	
-//	@ExceptionHandler(Exception.class)
-//	public ResponseEntity<String> handleException(Exception error) {
-//		System.out.println("handleExceptionTest");
-//		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error.getMessage());
-//	}
-
 }
