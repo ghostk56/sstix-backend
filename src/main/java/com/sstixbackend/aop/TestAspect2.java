@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class TestAspect2 {
 
-	@Pointcut("execution(public * com.sstixbackend..*Controller.*(..))")
+	@Pointcut("execution(public * com.sstixbackend..TestAopController.*(..))")
 	public void testPoint2() {
 	}
 
